@@ -37,12 +37,23 @@ const (
 
 var endianness = binary.LittleEndian
 
+func (taskServer) Done(ctx context.Context, text *todo.Text) (*todo.Task, error) {
+	task := &todo.Task{
+		Text: text.Text,
+		Done: true,
+	}
+	return store(ctx, task)
+}
+
 func (taskServer) Add(ctx context.Context, text *todo.Text) (*todo.Task, error) {
 	task := &todo.Task{
 		Text: text.Text,
 		Done: false,
 	}
+	return store(ctx, task)
+}
 
+func store(ctx context.Context, task *todo.Task) (*todo.Task, error) {
 	b, err := proto.Marshal(task)
 	if err != nil {
 		return nil, fmt.Errorf("could not encode task: %v", err)
@@ -92,6 +103,17 @@ func (taskServer) List(ctx context.Context, void *todo.Void) (*todo.TaskList, er
 			return nil, fmt.Errorf("could not read task: %v", err)
 		}
 		b = b[l:]
-		tasks.Tasks = append(tasks.Tasks, &task)
+
+		newTask := true
+		for i, v := range tasks.Tasks {
+			if v.Text == task.Text {
+				tasks.Tasks[i].Done = task.Done
+				newTask = false
+			}
+		}
+		if newTask {
+			tasks.Tasks = append(tasks.Tasks, &task)
+		}
+
 	}
 }

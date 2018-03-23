@@ -30,6 +30,8 @@ func main() {
 		err = list(context.Background(), client)
 	case "add":
 		err = add(context.Background(), client, strings.Join(flag.Args()[1:], " "))
+	case "done":
+		err = done(context.Background(), client, strings.Join(flag.Args()[1:], " "))
 	default:
 		err = fmt.Errorf("unknown subcommand %s", cmd)
 	}
@@ -37,6 +39,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func done(ctx context.Context, client todo.TasksClient, text string) error {
+	_, err := client.Done(ctx, &todo.Text{Text: text})
+	if err != nil {
+		return fmt.Errorf("could not mark task as done in the backend: %v", err)
+	}
+
+	fmt.Println("done task successfully")
+	return nil
 }
 
 func add(ctx context.Context, client todo.TasksClient, text string) error {
